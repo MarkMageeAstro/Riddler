@@ -192,6 +192,8 @@ def predict_spectra(theta):
         velocity = theta[i*2+4]
         spectrum_parameters = [time_since_explosion, luminosity, velocity, ke]
         all_parameters.append(spectrum_parameters)
+        
+    all_parameters = np.array(all_parameters)
 
     ## Log and transform all the parameters for generating spectra
     current_params_transformed = label_fit.transform( np.log10(all_parameters) )
@@ -200,7 +202,7 @@ def predict_spectra(theta):
     NN_predictions = trained_NN.predict_on_batch(current_params_transformed)
     NN_spectra = data_fit.inverse_transform(NN_predictions)
     NN_spectra = np.power(10, np.float64(NN_spectra))
-
+    
     ## The NN accuracy depends on the time and velocity of the spectra
     ## Use interpolators to get the accuracy for each set of parameters
     NN_accuracy = interpolate_values(NN_accuracy_interpolator, all_parameters[:,0], all_parameters[:,2])
@@ -209,6 +211,8 @@ def predict_spectra(theta):
     return NN_spectra, NN_spectra_err
     
     
+    
+
     
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 ## Function to calculate the log likelihood to be used in fitting -- vectorised for ultranest
@@ -245,6 +249,8 @@ def log_likelihood_vectorised(theta):
     ## Also include weighting for each wavelength
     result[~points_mask] = -0.5 * np.sum(np.sum( ( np.power(y - model_spectra, 2.0) / sigma2 + np.log(sigma2) + np.log(2.*np.pi) ) * yweight, axis=1 ), axis=1)[~points_mask]
     return result
+
+
 
 
 
@@ -303,7 +309,7 @@ def run_ultranest_fitting():
     except:
         ""
     ## Set up the ultranest sampler
-    sampler = ultranest.ReactiveNestedSampler(param_names, log_likelihood_vectorised, prior_transform_vectorised, vectorized=True, log_dir=output_path)
+    sampler = ultranest.ReactiveNestedSampler(param_names, log_likelihood_vectorised, prior_transform_vectorised, vectorized=True, log_dir=output_path, resume=RESTART_FLAG)
     sampler.stepsampler = ultranest.stepsampler.SliceSampler(nsteps=nsteps, generate_direction=ultranest.stepsampler.generate_mixture_random_direction,)
     
     ## Run sampler, print results, and plot
@@ -386,7 +392,6 @@ for observed_spectrum in observed_spectra:
     ## Load up the observed spectrum
     ## Spectrum should be in the format of wavelength, flux, flux error, and weight
     spectrum = pd.read_csv(observed_spectrum, delim_whitespace=True, header=None, names=("Wave", "Flux", "Flux_err", "Weight"))
-    
     ## Convert to restframe
     spectrum['RestWave'] = spectrum['Wave'] / (1.+observed_spectra_redshift)
     
@@ -404,11 +409,14 @@ for observed_spectrum in observed_spectra:
     smoothed_flux = sf(binned_flux, window_length=window, polyorder=order)
     smoothed_flux_err = sf(binned_flux_err, window_length=window, polyorder=order)
 
+    ## Get the weights at the binned resolution of the spectrum
+    interpolated_weights = np.interp(new_wl, spectrum['RestWave'].values, spectrum['Weight'].values)
+    
     ## Add spectra, errors, and weights to lists
     obs_spectra_list.append( smoothed_flux )
     obs_spectra_err_list.append( smoothed_flux_err )
-    obs_spectra_weight_list.append( spectrum['Weight'].values )
-
+    obs_spectra_weight_list.append( interpolated_weights )
+        
     i = i + 1
 
 ## Convert to numpy arrays
@@ -432,6 +440,8 @@ for i in np.arange(len(observed_spectra_jd)):
     param_names.append('velocity_spec' + str(i+1))
 
 nsteps = 2 * len(param_names)
+
+
 
 
 
