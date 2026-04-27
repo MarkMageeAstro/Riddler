@@ -46,15 +46,15 @@ riddler can be run from the command line using
 
 where
 * ```SN_NAME``` gives the name of the supernova to be fit and the folder name where data is stored.
-* ```MODEL_TYPE``` specifies which type of explosion model will be used during fitting. Valid options are DEF, DDT, DOD, GCD, and VM. For further details see [Magee 2026a]().
+* ```MODEL_TYPE``` specifies which type of explosion model will be used during fitting. Valid options are DEF, DDT, DOD, GCD, and VM. For further details see [Magee (2026a)]().
 * ```RESTART_FLAG``` is an UltraNest option specifying the resume status. More information can be found [here](https://johannesbuchner.github.io/UltraNest/ultranest.html#ultranest.integrator.ReactiveNestedSampler). If ```false```, a new run is started from scratch. If ```true```, the current run will continue from the last run in the outputs folder.
 
 
-A new folder given by ```SN_NAME``` will be created in the **Outputs** folder and contain the results of the UltraNest run. Subsequent runs can also be found in this folder. A number of outputs are created for each run, details of which can be found in the UltraNest [documentation](https://johannesbuchner.github.io/UltraNest/performance.html#output-files). In addition, the **plots** folder contains a quick plot showing the best fitting model spectra compared against the input spectra. Some of the parameters fit by riddler are degenerate, therefore the posteriors found by UltraNest are processed and output into a new file in the **chains** folder. This file contains, for example, the 56Ni mass of the models, phases of the spectra, etc. and should be used for analysis. For further details see [Magee 2026a]().
+A new folder given by ```SN_NAME``` will be created in the **Outputs** folder and contain the results of the UltraNest run. Subsequent runs can also be found in this folder. A number of outputs are created for each run, details of which can be found in the UltraNest [documentation](https://johannesbuchner.github.io/UltraNest/performance.html#output-files). In addition, the **plots** folder contains a quick plot showing the best fitting model spectra compared against the input spectra. Some of the parameters fit by riddler are degenerate, therefore the posteriors found by UltraNest are processed and output into a new file in the **chains** folder. This file contains, for example, the 56Ni mass of the models, phases of the spectra, etc. and should be used for analysis. For further details see [Magee (2026a)]().
 
 
 
 ## Acknowledgement
 
-If you make use of riddler, please cite [Magee et al. (2024)](https://ui.adsabs.harvard.edu/abs/2024MNRAS.531.3042M/abstract) and [Magee 2026a]() for the initial and updated releases of the riddler code. Please also cite [TARDIS](https://github.com/tardis-sn/tardis) and [UltraNest](https://johannesbuchner.github.io/UltraNest/readme.html) for the training data generation and nested sampling, respectively. 
+If you make use of riddler, please cite [Magee et al. (2024)](https://ui.adsabs.harvard.edu/abs/2024MNRAS.531.3042M/abstract) and [Magee (2026a)]() for the initial and updated releases of the riddler code. Please also cite [TARDIS](https://github.com/tardis-sn/tardis) and [UltraNest](https://johannesbuchner.github.io/UltraNest/readme.html) for the training data generation and nested sampling, respectively. 
 
