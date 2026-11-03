@@ -35,6 +35,7 @@ Inside the ```SN_NAME``` folder, there should also be two files. **SN_NAME_times
 * Host galaxy R_V uncertainty
 * Minimum explosion date to fit
 * Maximum explosion date to fit
+
 For those parameters with uncertainties UltraNest will sample new values during fitting from normal distributions given the value and uncertainty input by the user. If no uncertainty is provided, UltraNest fixes this parameter to the value given. The host galaxy extinction can also be drawn from an exponential distribution by setting E(B-V)_host = E(B-V)_host_err = -999. The default Rv_host is 3.1, which is used if no valid value is given. The redshift, Milky Way E(B-V), and Milky Way R_V are all fixed based on the values provided. The explosion date is uniformly sampled between the minimum and maximum dates provided.
 
 An example input folder for SN2011fe is included within this repository.
