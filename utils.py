@@ -59,11 +59,11 @@ def run_ultranest_fitting(root_dir, sn_name, model_type, nn_filename, restart_fl
     sampler = ultranest.ReactiveNestedSampler(prediction_handler.parameter_names, prediction_handler.log_likelihood, prediction_handler.prior_transform, vectorized=True, log_dir=output_path, resume=resume_flag)
 
     ## Run the sampler initially without the step sampler, this is designed to make it a bit faster initially
-    sampler.run(show_status=True, min_num_live_points=4000, max_ncalls=2e4)
+    sampler.run(show_status=True, min_num_live_points=4000, max_ncalls=2e6)
 
     ## After the initial run, switch to using the step sampler to make it more efficient at sampling the parameter space
     sampler.stepsampler = ultranest.stepsampler.SliceSampler(nsteps=20, generate_direction=ultranest.stepsampler.generate_mixture_random_direction,)
-    sampler.run(show_status=True, min_num_live_points=4000, max_ncalls=2e4)
+    sampler.run(show_status=True, min_num_live_points=4000)
 
     ## Print and plot the results
     sampler.print_results()
