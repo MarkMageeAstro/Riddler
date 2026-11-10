@@ -164,7 +164,7 @@ def main():
     output_path = subfolders[-1]
     print("Loading results from: " + output_path, flush=True)
 
-    equal_weighted_post = pd.read_csv(output_path + "/chains/equal_weighted_post.txt", sep='\s+')
+    equal_weighted_post = pd.read_csv(output_path + "/chains/equal_weighted_post.txt", sep=r'\s+')
     best_fitting_parameters = equal_weighted_post.mean().values
 
     print("Plotting best fitting parameters", flush=True)
