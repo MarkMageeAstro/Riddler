@@ -13,9 +13,16 @@ riddler requires a number of dependencies including:
 * [NumPy](https://numpy.org/install/)
 * [pandas](https://pandas.pydata.org/getting_started.html)
 * [PyTorch](https://pytorch.org/get-started/locally/)
-* [SciPy](https://scipy.org/)
+* [SciPy](https://scipy.org/) == 1.13.1 
 * [SpectRes](https://spectres.readthedocs.io/en/latest/) 
 * [UltraNest](https://johannesbuchner.github.io/UltraNest/readme.html) 
+* [six](https://pypi.org/project/six/) (required for UltraNest plotting)
+* [h5py](https://www.h5py.org/)
+* [scikit-learn](https://scikit-learn.org/stable/)
+
+
+Optional dependencies:
+* [mpi4py](https://mpi4py.readthedocs.io/en/stable/) (required for MPI multiprocessing)
 
 
 
@@ -43,12 +50,13 @@ An example input folder for SN2011fe is included within this repository.
 
 riddler can be run from the command line using
   
-  ```python riddler.py SN_NAME MODEL_TYPE RESTART_FLAG```
+  ```python riddler.py SN_NAME MODEL_TYPE RESTART_FLAG STAGE```
 
 where
 * ```SN_NAME``` gives the name of the supernova to be fit and the folder name where data is stored.
 * ```MODEL_TYPE``` specifies which type of explosion model will be used during fitting. Valid options are DEF, DDT, DOD, GCD, and VM. For further details see [Magee (2026a)]().
 * ```RESTART_FLAG``` is an UltraNest option specifying the resume status. More information can be found [here](https://johannesbuchner.github.io/UltraNest/ultranest.html#ultranest.integrator.ReactiveNestedSampler). If ```false```, a new run is started from scratch. If ```true```, the current run will continue from the last run in the outputs folder.
+* ```STAGE``` specifies what stage of the fitting to run. Valid options are ```fit```, ```post```, and ```all```. If ```fit``` is specified, the code will only run the fit of the spectra and will not run the post-processing of the posteriors or generate plots of the best fit. If ```post``` is specified, the code will only run the post-processing and generate plots. It will use the most recent run in the outputs folder. The default option is ```all```, which runs both the fit and post-processing. 
 
 
 A new folder given by ```SN_NAME``` will be created in the **Outputs** folder and contain the results of the UltraNest run. Subsequent runs can also be found in this folder. A number of outputs are created for each run, details of which can be found in the UltraNest [documentation](https://johannesbuchner.github.io/UltraNest/performance.html#output-files). In addition, the **plots** folder contains a quick plot showing the best fitting model spectra compared against the input spectra. Some of the parameters fit by riddler are degenerate, therefore the posteriors found by UltraNest are processed and output into a new file in the **chains** folder. This file contains, for example, the 56Ni mass of the models, phases of the spectra, etc. and should be used for analysis. For further details see [Magee (2026a)]().
