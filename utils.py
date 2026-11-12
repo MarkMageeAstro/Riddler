@@ -18,6 +18,11 @@ import matplotlib.ticker as mtick
 
 from extinction import ccm89, fitzpatrick99, apply
 
+try:
+    from mpi4py import MPI
+    rank = MPI.COMM_WORLD.Get_rank()
+except ImportError:
+    rank = 0
 
 def run_ultranest_fitting(root_dir, sn_name, model_type, nn_filename, restart_flag, prediction_handler):
     """
@@ -46,12 +51,14 @@ def run_ultranest_fitting(root_dir, sn_name, model_type, nn_filename, restart_fl
 
     ## If the restart flag is set to True, find the last saved state and resume the fitting procedure from there. Otherwise, start from scratch
     if restart_flag:
-        print("Resuming fitting procedure from previous run.", flush=True)
+        if rank == 0:
+            print("Resuming fitting procedure from previous run.", flush=True)
         resume_flag = 'resume'
         subfolders = sorted(glob.glob(output_path + "/run*"), key=extract_run_number)
         output_path = subfolders[-1]
     else:
-        print("Starting fitting procedure from scratch.", flush=True)
+        if rank == 0:
+            print("Starting fitting procedure from scratch.", flush=True)
         resume_flag = 'subfolder'    
         
 
@@ -71,12 +78,14 @@ def run_ultranest_fitting(root_dir, sn_name, model_type, nn_filename, restart_fl
     try:
         sampler.plot_run()
     except Exception as e:
-        print("Could not generate run plot: %s", e, flush=True)
+        if rank == 0:
+            print("Could not generate run plot: %s" % e, flush=True)
 
     try:
         sampler.plot_trace()
     except Exception as e:
-        print("Could not generate trace plot: %s", e, flush=True)
+        if rank == 0:
+            print("Could not generate trace plot: %s" % e, flush=True)
 
     return sampler
 
@@ -261,6 +270,11 @@ def process_posteriors(root_dir, sn_name, nn_filename, results, data_handler, mo
                 luminosity_spec_list.append(luminosity_spec)
             luminosity_list.append(np.log10(luminosity_spec_list / csts.L_sun.to('erg/s').value))
     
+    luminosity_list = np.array(luminosity_list)
+    for i in np.arange(len(data_handler.observed_spectra_dates)):
+        results['luminosity_spec' + str(i+1)] = luminosity_list[:,i]
+
+
 
     ## Save the processed posteriors to a .csv file in the same directory as the UltraNest results
     output_path = root_dir + "Outputs/" + sn_name + "/FittedType_" + model_type + "/" + nn_filename

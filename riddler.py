@@ -11,6 +11,7 @@ import pandas as pd
 
 import torch
 import torch.optim as optim
+torch.set_num_threads(1)
 
 
 import utils
@@ -18,7 +19,16 @@ from nn_models import NeuralNetwork
 from data import ObservedData
 from predict_spectra import SpectralPredictions
 
-
+try:
+    from mpi4py import MPI
+    comm = MPI.COMM_WORLD
+    rank = comm.Get_rank()
+    size = comm.Get_size()
+except ImportError:
+    comm = None
+    rank = 0
+    size = 1
+    
 
 root_dir = './'
 device = torch.accelerator.current_accelerator().type if torch.accelerator.is_available() else "cpu"
@@ -35,6 +45,10 @@ model_type = sys.argv[2]
 
 ## Flag for whether to continue a previous UltraNest run or start a new one
 restart_flag = sys.argv[3].lower() == 'true'
+
+## Separate the fitting and post-processing so then can be run separately if needed
+## Stages can be any of fit, post, or all
+stage = sys.argv[4].lower() if len(sys.argv) > 4 else 'all'
 
 ## Define the wavelength grid of the neural network
 ## Currently only the values shown here are supported, but future neural networks could be trained over different wavelength grids
@@ -147,35 +161,53 @@ nsteps = len(param_names)
 
 ## Main function
 def main():
-    print("Running RIDDLER", flush=True)
+    if rank == 0:
+        print("Running RIDDLER (stage: %s) on %d MPI process(es)" % (stage, size), flush=True)
 
     ## Create the prediction handler
     ## This class is responsible for sampling for transforming from the prior, generating the spectra, and calculating the likelihood against the data (handler)
     prediction_handler = SpectralPredictions(data_handler, model_type, physical_properties_scaler, physical_flux_scaler, interpolator_list, device, loaded_model, param_names, uncertainty_scale_factor)
 
     ## Run the fitting function
-    utils.run_ultranest_fitting(root_dir, sn_name, model_type, nn_filename, restart_flag, prediction_handler)
-    print("Finished RIDDLER run", flush=True)
+    if stage in ('fit', 'all'):
+        utils.run_ultranest_fitting(root_dir, sn_name, model_type, nn_filename, restart_flag, prediction_handler)
+        if comm is not None:
+            comm.Barrier()
+        if rank == 0:
+            print("Finished RIDDLER run", flush=True)
 
-    ## Load up the results from the run
-    ## Take the mean of the posteriors, then plot and process for quick comparisons later
-    output_path = root_dir + "Outputs/" + sn_name + "/FittedType_" + model_type + "/" + nn_filename
-    subfolders = sorted(glob.glob(output_path + "/run*"), key=utils.extract_run_number)
-    output_path = subfolders[-1]
-    print("Loading results from: " + output_path, flush=True)
+        
+    if stage in ('post', 'all') and rank == 0:
+        try:
+            print("Finished RIDDLER run", flush=True)
 
-    equal_weighted_post = pd.read_csv(output_path + "/chains/equal_weighted_post.txt", sep=r'\s+')
-    best_fitting_parameters = equal_weighted_post.mean().values
+            ## Load up the results from the run
+            ## Take the mean of the posteriors, then plot and process for quick comparisons later
+            output_path = root_dir + "Outputs/" + sn_name + "/FittedType_" + model_type + "/" + nn_filename
+            subfolders = sorted(glob.glob(output_path + "/run*"), key=utils.extract_run_number)
+            output_path = subfolders[-1]
+            print("Loading results from: " + output_path, flush=True)
 
-    print("Plotting best fitting parameters", flush=True)
-    utils.plot_spectrum(root_dir, sn_name, data_handler, model_type, nn_filename, best_fitting_parameters, prediction_handler)
+            equal_weighted_post = pd.read_csv(output_path + "/chains/equal_weighted_post.txt", sep=r'\s+')
+            best_fitting_parameters = equal_weighted_post.mean().values
 
-    print("Processing posterior distributions", flush=True)
-    utils.process_posteriors(root_dir, sn_name, nn_filename, equal_weighted_post, data_handler, model_type)
+            print("Plotting best fitting parameters", flush=True)
+            utils.plot_spectrum(root_dir, sn_name, data_handler, model_type, nn_filename, best_fitting_parameters, prediction_handler)
 
-    print("Finished!", flush=True)
+            print("Processing posterior distributions", flush=True)
+            utils.process_posteriors(root_dir, sn_name, nn_filename, equal_weighted_post, data_handler, model_type)
 
+            print("Finished!", flush=True)
+        except Exception:
+            import traceback
+            traceback.print_exc()
+            if comm is not None:
+                comm.Abort(1)
+            raise
 
+    
+    if stage == 'all' and comm is not None:
+        comm.Barrier()
 
 if __name__ == "__main__":
     main()

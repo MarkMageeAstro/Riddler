@@ -9,6 +9,11 @@ from extinction import ccm89, fitzpatrick99, remove
 import spectres
 
 
+try:
+    from mpi4py import MPI
+    rank = MPI.COMM_WORLD.Get_rank()
+except ImportError:
+    rank = 0
 
 class ObservedData:
     """
@@ -83,17 +88,20 @@ class ObservedData:
         ## Bin to the correct wavelength grid
         i = 0
         for spectrum in data_list:
-            print("Reading in spectrum " + str(i+1) + " of " + str(len(data_list)) + ": " + spectrum, flush=True)
+            if rank == 0:
+                print("Reading in spectrum " + str(i+1) + " of " + str(len(data_list)) + ": " + spectrum, flush=True)
 
             spectrum_df = pd.read_csv(spectrum)
 
             ## Put into restframe
             spectrum_df['rest_wavelength'] = spectrum_df['wavelength'] / (1 + self.observed_properties['Redshift'])
-            print("Wavelength range: " + "{:.2f}".format(spectrum_df['rest_wavelength'].min()) + " - " + "{:.2f}".format(spectrum_df['rest_wavelength'].max()), flush=True)
+            if rank == 0:
+                print("Wavelength range: " + "{:.2f}".format(spectrum_df['rest_wavelength'].min()) + " - " + "{:.2f}".format(spectrum_df['rest_wavelength'].max()), flush=True)
 
             ## If no flux error is given then automatically set to 2%
             if 'flux_err' not in spectrum_df.keys():
-                print("No flux error column found in spectrum %d. Setting flux errors to 2%% of the flux values.", i+1, flush=True)
+                if rank == 0:
+                    print("No flux error column found in spectrum %d. Setting flux errors to 2%% of the flux values.", i+1, flush=True)
                 spectrum_df['flux_err'] = 0.02 * spectrum_df['flux']
 
             ## If any NaNs are present in the flux, flux error, or weight columns, raise an error
@@ -121,7 +129,8 @@ class ObservedData:
 
             i += 1
         
-        print("Finished reading in " + str(i) + " spectra.", flush=True)
+        if rank == 0:
+            print("Finished reading in " + str(i) + " spectra.", flush=True)
 
         ## Convert the lists to arrays and store as attributes
         self.observed_fluxes = np.array(flux_list)
