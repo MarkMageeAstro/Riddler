@@ -12,7 +12,7 @@ riddler requires a number of dependencies including:
 * [Matplotlib](https://matplotlib.org/)
 * [NumPy](https://numpy.org/install/)
 * [pandas](https://pandas.pydata.org/getting_started.html)
-* [PyTorch](https://pytorch.org/get-started/locally/)
+* [PyTorch](https://pytorch.org/get-started/locally/) >= 2.6
 * [SciPy](https://scipy.org/) == 1.13.1 
 * [SpectRes](https://spectres.readthedocs.io/en/latest/) 
 * [UltraNest](https://johannesbuchner.github.io/UltraNest/readme.html) 
